@@ -72,9 +72,9 @@ request_log = logging.getLogger('request')
         pprint.pprint(result)
         raise
 
-def keypoint_optimize(options, keyspots, weights):
+def keypoint_optimize(options, keyspots, weights, mode):
     """Returns the location based scoring of the options."""
-    durations = load_pairwise_distances(options, keyspots)
+    durations = load_pairwise_distances(options, keyspots, mode)
     weighted = durations.dot(weights)
     return dict(zip(options, weighted/60/60/weights.sum()))
 
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     weights, keypoints = args.keypoints
 
     optimized = keypoint_optimize(
-        options, keypoints, numpy.array(weights))
+        options, keypoints, numpy.array(weights), args.mode)
 
     for k in sorted(optimized, key=lambda x: optimized[x]):
         print "%.3f%20s" % (optimized[k], k)
