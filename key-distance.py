@@ -132,9 +132,17 @@ parser.add_argument(
 parser.add_argument(
     '--mode',
     help='mode of transportation (driving, transit, bicycle, walking)')
+parser.add_argument(
+    '--verbose', action='store_true',
+    help='mode of transportation (driving, transit, bicycle, walking)')
 
 if __name__ == '__main__':
     args= parser.parse_args()
+
+    if args.verbose:
+        logging.basicConfig(level=logging.INFO)
+    else:
+        logging.basicConfig()
 
     options = args.options
     weights, keypoints = args.keypoints
