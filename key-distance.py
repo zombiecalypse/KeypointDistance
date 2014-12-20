@@ -47,6 +47,7 @@ import simplejson
 import pprint
 import numpy
 import argparse
+import logging
 
 def load_pairwise_distances(origins, destinations, mode='transit'):
     url = "http://maps.googleapis.com/maps/api/distancematrix/json?" \
@@ -55,10 +56,11 @@ def load_pairwise_distances(origins, destinations, mode='transit'):
             "|".join(urllib.quote_plus(e) for e in origins),
             "|".join(urllib.quote_plus(e) for e in destinations),
             mode)
-    print url
+request_log = logging.getLogger('request')
+
+    request_log.info('GET %s', url)
     r = urllib.urlopen(url).read()
     result = simplejson.loads(r)
-    print r
 
     try:
         distances = numpy.zeros((len(origins), len(destinations)), dtype=float)
