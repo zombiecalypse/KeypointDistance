@@ -42,6 +42,8 @@
 #   --mode MODE           mode of transportation (driving, transit, bicycle,
 #                         walking)
 
+import time
+import random
 import os
 import urllib
 import simplejson
@@ -49,19 +51,45 @@ import pprint
 import numpy
 import argparse
 import logging
+import functools
 
-def load_pairwise_distances(origins, destinations, mode='transit'):
-    url = "http://maps.googleapis.com/maps/api/distancematrix/json?" \
-        "origins={0}&destinations={1}&mode={2}&sensor=false" \
-        "departure_time=1418809537".format(
-            "|".join(urllib.quote_plus(e) for e in origins),
-            "|".join(urllib.quote_plus(e) for e in destinations),
-            mode)
 request_log = logging.getLogger('request')
 
+def retry(times, sleep):
+    def wrap(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            for i in range(times-1):
+                try:
+                    return f(*args, **kwargs)
+                except BaseException as e:
+                    request_log.warn(e)
+                    up_to = 2**i * sleep
+                    actual = random.uniform(0, up_to)
+                    time.sleep(actual)
+            return f(*args, **kwargs)
+        return wrapper
+    return wrap
     request_log.info('GET %s', url)
     r = urllib.urlopen(url).read()
     result = simplejson.loads(r)
+def load_pairwise_distances(origins, destinations, mode='driving'):
+    if mode == 'transit':
+        return load_distances_transit(origins, destinations)
+
+    @retry(3, 2.0)
+    def get_response():
+        url = "http://maps.googleapis.com/maps/api/distancematrix/json?" \
+            "origins={0}&destinations={1}&mode={2}&sensor=false" \
+            "departure_time=1418809537".format(
+                "|".join(urllib.quote_plus(e) for e in origins),
+                "|".join(urllib.quote_plus(e) for e in destinations),
+                mode)
+        request_log.info('GET %s', url)
+        r = urllib.urlopen(url).read()
+        return simplejson.loads(r)
+
+    result = get_response()
 
     try:
         distances = numpy.zeros((len(origins), len(destinations)), dtype=float)
