@@ -70,9 +70,32 @@ def retry(times, sleep):
             return f(*args, **kwargs)
         return wrapper
     return wrap
+
+@retry(3, 2.0)
+def transit_distance(orig, dest):
+    url = "https://maps.googleapis.com/maps/api/directions/json?" \
+        "mode=transit&departure_time=1418983000" \
+        "&origin={0}&destination={1}".format(orig, dest)
+
     request_log.info('GET %s', url)
     r = urllib.urlopen(url).read()
     result = simplejson.loads(r)
+    leg = result['routes'][0]['legs'][0]
+    return leg['duration']['value']
+
+
+# Distance matrix api doesn't offer transit. The directions api does however.
+def load_distances_transit(origins, destinations):
+    """The distance matrix for transit."""
+
+    distances = numpy.zeros((len(origins), len(destinations)), dtype=float)
+    for i, orig in enumerate(origins):
+        for j, dest in enumerate(destinations):
+            distances[i,j] = transit_distance(orig, dest)
+
+    return distances
+
+
 def load_pairwise_distances(origins, destinations, mode='driving'):
     if mode == 'transit':
         return load_distances_transit(origins, destinations)
