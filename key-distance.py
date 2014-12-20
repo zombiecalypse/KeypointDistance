@@ -42,6 +42,7 @@
 #   --mode MODE           mode of transportation (driving, transit, bicycle,
 #                         walking)
 
+import os
 import urllib
 import simplejson
 import pprint
@@ -79,10 +80,12 @@ def keypoint_optimize(options, keyspots, weights, mode):
     return dict(zip(options, weighted/60/60/weights.sum()))
 
 def read_option_file(fp):
+    fp = os.path.expanduser(fp)
     with open(fp) as f:
         return map(str.strip, f.readlines())
 
 def read_keypoint_file(fp):
+    fp = os.path.expanduser(fp)
     with open(fp) as f:
         keypoints = []
         for l in f:
